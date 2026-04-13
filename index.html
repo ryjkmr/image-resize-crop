@@ -70,7 +70,8 @@
               <div class="control-block">
                 <h3>リサイズ</h3>
                 <div class="resize-mode" role="radiogroup" aria-label="Resize mode">
-                  <label><input type="radio" name="resizeMode" value="width" checked /> 幅で指定</label>
+                  <label><input type="radio" name="resizeMode" value="none" checked /> なし</label>
+                  <label><input type="radio" name="resizeMode" value="width" /> 幅で指定</label>
                   <label><input type="radio" name="resizeMode" value="height" /> 高さで指定</label>
                   <label><input type="radio" name="resizeMode" value="percent" /> %で指定</label>
                 </div>
@@ -97,6 +98,7 @@
 
               <div class="control-block action-block">
                 <button id="applyButton" type="button">プレビュー更新</button>
+                <button id="copyButton" type="button" disabled>クリップボードにコピー</button>
                 <button id="downloadButton" type="button" disabled>PNGをダウンロード</button>
               </div>
             </div>

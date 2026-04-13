@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>画像リサイズとトリミング</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <h1>画像のトリミングとリサイズ</h1>
+      </header>
+
+      <main class="layout">
+        <section class="panel input-panel">
+          <h2>画像を読み込む</h2>
+          <div id="dropZone" class="drop-zone" tabindex="0">
+            <input id="fileInput" type="file" accept="image/*" hidden />
+            <p>ここに画像をドロップ</p>
+            <button id="fileButton" type="button">ファイルを選択</button>
+            <span>またはこの画面で <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>V</kbd></span>
+          </div>
+          <div id="imageMeta" class="image-meta" aria-live="polite"></div>
+        </section>
+
+        <section class="panel editor-panel">
+          <div class="panel-header">
+            <h2>トリミング</h2>
+            <div class="segmented" role="radiogroup" aria-label="Crop preset">
+              <button class="preset active" data-aspect="free" type="button">自由</button>
+              <button class="preset" data-aspect="original" type="button">オリジナル</button>
+              <button class="preset" data-aspect="1" type="button">正方形</button>
+              <button class="preset" data-aspect="1.7777777778" type="button">16:9</button>
+            </div>
+          </div>
+
+          <div class="editor-grid">
+            <div class="canvas-card">
+              <div id="canvasStage" class="canvas-stage">
+                <canvas id="editorCanvas" width="900" height="600"></canvas>
+                <div id="emptyState" class="empty-state">画像を読み込むとここで編集できます</div>
+              </div>
+            </div>
+
+            <div class="controls">
+              <div class="control-block">
+                <h3>クロップ範囲</h3>
+                <p class="control-note">画像上をドラッグして範囲指定。既存範囲の内側は移動、四隅はサイズ変更。</p>
+                <div class="field-grid">
+                  <label>
+                    X
+                    <input id="cropX" type="number" min="0" step="1" />
+                  </label>
+                  <label>
+                    Y
+                    <input id="cropY" type="number" min="0" step="1" />
+                  </label>
+                  <label>
+                    幅
+                    <input id="cropWidth" type="number" min="1" step="1" />
+                  </label>
+                  <label>
+                    高さ
+                    <input id="cropHeight" type="number" min="1" step="1" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="control-block">
+                <h3>リサイズ</h3>
+                <div class="resize-mode" role="radiogroup" aria-label="Resize mode">
+                  <label><input type="radio" name="resizeMode" value="width" checked /> 幅で指定</label>
+                  <label><input type="radio" name="resizeMode" value="height" /> 高さで指定</label>
+                  <label><input type="radio" name="resizeMode" value="percent" /> %で指定</label>
+                </div>
+
+                <div class="field-grid resize-fields">
+                  <label data-mode="width">
+                    幅(px)
+                    <input id="resizeWidth" type="number" min="1" step="1" />
+                  </label>
+                  <label data-mode="height" class="hidden">
+                    高さ(px)
+                    <input id="resizeHeight" type="number" min="1" step="1" />
+                  </label>
+                  <label data-mode="percent" class="hidden">
+                    比率(%)
+                    <input id="resizePercent" type="number" min="1" step="1" value="100" />
+                  </label>
+                  <label>
+                    出力サイズ
+                    <output id="resizeSummary">-</output>
+                  </label>
+                </div>
+              </div>
+
+              <div class="control-block action-block">
+                <button id="applyButton" type="button">プレビュー更新</button>
+                <button id="downloadButton" type="button" disabled>PNGをダウンロード</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel result-panel">
+          <div class="panel-header">
+            <h2>出力プレビュー</h2>
+            <div id="resultMeta" class="result-meta"></div>
+          </div>
+          <div class="result-stage">
+            <canvas id="resultCanvas" width="800" height="600"></canvas>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

@@ -1,15 +1,15 @@
 :root {
-  color-scheme: light;
-  --bg: #f2efe8;
-  --bg-accent: #d9e7d0;
-  --panel: rgba(255, 252, 247, 0.92);
-  --panel-strong: #fffaf3;
-  --text: #1f2521;
-  --muted: #5d665f;
-  --line: rgba(54, 72, 58, 0.15);
-  --accent: #2a6f4f;
-  --accent-soft: #d9ebdf;
-  --shadow: 0 22px 70px rgba(40, 59, 44, 0.12);
+  color-scheme: dark;
+  --bg: #090909;
+  --bg-accent: #141414;
+  --panel: rgba(20, 20, 20, 0.92);
+  --panel-strong: #1d1d1d;
+  --text: #f3f3f3;
+  --muted: #a7a7a7;
+  --line: rgba(255, 255, 255, 0.11);
+  --accent: #e8e8e8;
+  --accent-soft: #2a2a2a;
+  --shadow: 0 22px 70px rgba(0, 0, 0, 0.42);
   --radius: 24px;
 }
 
@@ -23,9 +23,9 @@ body {
   font-family: "Avenir Next", "Hiragino Sans", sans-serif;
   color: var(--text);
   background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.9), transparent 32%),
-    radial-gradient(circle at bottom right, rgba(206, 229, 211, 0.85), transparent 28%),
-    linear-gradient(135deg, var(--bg), #ece6db 52%, #f9f6ef 100%);
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.08), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(255, 255, 255, 0.05), transparent 22%),
+    linear-gradient(135deg, #050505, var(--bg-accent) 48%, #111111 100%);
 }
 
 button,
@@ -72,13 +72,13 @@ output {
   font-size: 0.82rem;
   line-height: 1.2;
   color: var(--muted);
-  background: rgba(255, 255, 255, 0.52);
-  border: 1px solid rgba(54, 72, 58, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
   box-shadow: none;
 }
 
 .transfer-link:hover {
-  background: rgba(255, 255, 255, 0.76);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .layout {
@@ -88,7 +88,7 @@ output {
 
 .panel {
   background: var(--panel);
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   backdrop-filter: blur(18px);
@@ -120,9 +120,9 @@ output {
   place-items: center;
   gap: 12px;
   padding: 34px 18px;
-  border: 2px dashed rgba(42, 111, 79, 0.35);
+  border: 2px dashed rgba(255, 255, 255, 0.16);
   border-radius: 20px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.75), rgba(230, 241, 232, 0.72));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.06));
   text-align: center;
   outline: none;
   transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
@@ -131,7 +131,7 @@ output {
 .drop-zone.dragover,
 .drop-zone:focus-visible {
   border-color: var(--accent);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(212, 233, 219, 0.95));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.12));
   transform: translateY(-1px);
 }
 
@@ -142,17 +142,18 @@ output {
 
 button {
   appearance: none;
-  border: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 999px;
   padding: 12px 18px;
   background: var(--accent);
-  color: white;
+  color: #0c0c0c;
   cursor: pointer;
   transition: transform 140ms ease, opacity 140ms ease, background 140ms ease;
 }
 
 button:hover {
   transform: translateY(-1px);
+  background: #ffffff;
 }
 
 button:disabled {
@@ -165,19 +166,20 @@ button:disabled {
   gap: 8px;
   padding: 6px;
   border-radius: 999px;
-  background: rgba(42, 111, 79, 0.08);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .preset {
   background: transparent;
   color: var(--muted);
   padding: 10px 14px;
+  border-color: transparent;
 }
 
 .preset.active {
   background: var(--panel-strong);
   color: var(--text);
-  box-shadow: 0 8px 18px rgba(28, 46, 34, 0.08);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
 }
 
 .editor-grid {
@@ -192,10 +194,10 @@ button:disabled {
   border-radius: 20px;
   overflow: hidden;
   background:
-    linear-gradient(45deg, rgba(53, 71, 58, 0.06) 25%, transparent 25%),
-    linear-gradient(-45deg, rgba(53, 71, 58, 0.06) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, rgba(53, 71, 58, 0.06) 75%),
-    linear-gradient(-45deg, transparent 75%, rgba(53, 71, 58, 0.06) 75%);
+    linear-gradient(45deg, rgba(255, 255, 255, 0.04) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.04) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.04) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.04) 75%);
   background-size: 24px 24px;
   background-position: 0 0, 0 12px, 12px -12px, -12px 0;
   border: 1px solid var(--line);
@@ -218,7 +220,7 @@ canvas {
   display: grid;
   place-items: center;
   color: var(--muted);
-  background: rgba(255, 250, 243, 0.78);
+  background: rgba(16, 16, 16, 0.86);
   pointer-events: none;
   user-select: none;
   -webkit-user-select: none;
@@ -236,7 +238,7 @@ canvas {
 .control-block {
   padding: 18px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.66);
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--line);
 }
 
@@ -267,9 +269,14 @@ output {
   min-height: 44px;
   padding: 10px 12px;
   border-radius: 14px;
-  border: 1px solid rgba(70, 87, 74, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   background: var(--panel-strong);
   color: var(--text);
+}
+
+input[type="number"]:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.18);
+  outline-offset: 1px;
 }
 
 output {
@@ -317,7 +324,7 @@ output {
 kbd {
   padding: 2px 6px;
   border-radius: 8px;
-  background: rgba(31, 37, 33, 0.08);
+  background: rgba(255, 255, 255, 0.08);
   font-size: 0.9em;
 }
 

@@ -28,6 +28,7 @@ const copyButton = document.getElementById("copyButton");
 const downloadButton = document.getElementById("downloadButton");
 const resizeModeInputs = [...document.querySelectorAll('input[name="resizeMode"]')];
 const presetButtons = [...document.querySelectorAll(".preset")];
+const transferButtons = [...document.querySelectorAll(".transfer-link")];
 
 const HANDLE_SIZE = 14;
 const MIN_CROP_SIZE = 24;
@@ -555,6 +556,43 @@ function renderOutput() {
   downloadButton.disabled = false;
 }
 
+async function copyResultImageToClipboard({ announce = true } = {}) {
+  if (!state.output || !window.ClipboardItem || !navigator.clipboard?.write) {
+    if (announce) {
+      resultMeta.textContent = "このブラウザでは画像のクリップボードコピーに未対応です";
+    }
+    return false;
+  }
+
+  try {
+    const blob = await new Promise((resolve, reject) => {
+      resultCanvas.toBlob((value) => {
+        if (value) {
+          resolve(value);
+          return;
+        }
+        reject(new Error("PNG の生成に失敗しました"));
+      }, "image/png");
+    });
+
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        "image/png": blob,
+      }),
+    ]);
+
+    if (announce) {
+      resultMeta.textContent = `${state.output.width} x ${state.output.height}px / クリップボードにコピーしました`;
+    }
+    return true;
+  } catch {
+    if (announce) {
+      resultMeta.textContent = "クリップボードへのコピーに失敗しました";
+    }
+    return false;
+  }
+}
+
 async function loadFile(file) {
   if (!file || !file.type.startsWith("image/")) {
     return;
@@ -645,31 +683,17 @@ Object.values(resizeFields).forEach((input) => {
 applyButton.addEventListener("click", renderOutput);
 
 copyButton.addEventListener("click", async () => {
-  if (!state.output || !window.ClipboardItem || !navigator.clipboard?.write) {
-    resultMeta.textContent = "このブラウザでは画像のクリップボードコピーに未対応です";
-    return;
-  }
+  await copyResultImageToClipboard();
+});
 
-  try {
-    const blob = await new Promise((resolve, reject) => {
-      resultCanvas.toBlob((value) => {
-        if (value) {
-          resolve(value);
-          return;
-        }
-        reject(new Error("PNG の生成に失敗しました"));
-      }, "image/png");
-    });
-
-    await navigator.clipboard.write([
-      new ClipboardItem({
-        "image/png": blob,
-      }),
-    ]);
-    resultMeta.textContent = `${state.output.width} x ${state.output.height}px / クリップボードにコピーしました`;
-  } catch {
-    resultMeta.textContent = "クリップボードへのコピーに失敗しました";
-  }
+transferButtons.forEach((button) => {
+  button.addEventListener("click", async () => {
+    const targetUrl = button.dataset.transferUrl;
+    if (state.output) {
+      await copyResultImageToClipboard({ announce: false });
+    }
+    window.location.href = targetUrl;
+  });
 });
 
 downloadButton.addEventListener("click", () => {

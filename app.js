@@ -25,6 +25,7 @@ const resizeFields = {
 const resizeSummary = document.getElementById("resizeSummary");
 const applyButton = document.getElementById("applyButton");
 const copyButton = document.getElementById("copyButton");
+const copyCommandButton = document.getElementById("copyCommandButton");
 const downloadButton = document.getElementById("downloadButton");
 const resizeModeInputs = [...document.querySelectorAll('input[name="resizeMode"]')];
 const presetButtons = [...document.querySelectorAll(".preset")];
@@ -128,11 +129,15 @@ function cropToCanvasRect(crop) {
   };
 }
 
-function setAspectMode(mode) {
-  state.aspectMode = mode;
+function updateAspectButtons(mode) {
   presetButtons.forEach((button) => {
     button.classList.toggle("active", button.dataset.aspect === mode);
   });
+}
+
+function setAspectMode(mode) {
+  state.aspectMode = mode;
+  updateAspectButtons(mode);
 
   if (!state.image || !state.crop) {
     return;
@@ -204,10 +209,59 @@ function initializeCrop() {
   };
 
   state.aspectMode = "free";
-  presetButtons.forEach((button) => {
-    button.classList.toggle("active", button.dataset.aspect === "free");
-  });
+  updateAspectButtons("free");
   setCrop(crop);
+}
+
+function canReuseCropForImage(crop, image) {
+  if (!crop || !image) {
+    return false;
+  }
+
+  return (
+    crop.x >= 0 &&
+    crop.y >= 0 &&
+    crop.width >= 1 &&
+    crop.height >= 1 &&
+    crop.x + crop.width <= image.width &&
+    crop.y + crop.height <= image.height
+  );
+}
+
+function snapshotSettings() {
+  if (!state.image || !state.crop) {
+    return null;
+  }
+
+  return {
+    crop: { ...state.crop },
+    aspectMode: state.aspectMode,
+    resizeMode: currentResizeMode(),
+    resizeWidth: resizeFields.width.value,
+    resizeHeight: resizeFields.height.value,
+    resizePercent: resizeFields.percent.value,
+  };
+}
+
+function restoreSettings(settings, image) {
+  if (!settings || !canReuseCropForImage(settings.crop, image)) {
+    resizeFields.width.value = image.width;
+    resizeFields.height.value = image.height;
+    resizeFields.percent.value = 100;
+    initializeCrop();
+    return;
+  }
+
+  state.aspectMode = settings.aspectMode;
+  updateAspectButtons(settings.aspectMode);
+  resizeModeInputs.forEach((input) => {
+    input.checked = input.value === settings.resizeMode;
+  });
+  resizeFields.width.value = settings.resizeWidth;
+  resizeFields.height.value = settings.resizeHeight;
+  resizeFields.percent.value = settings.resizePercent;
+  setCrop(settings.crop);
+  updateResizeVisibility();
 }
 
 function renderEditor() {
@@ -528,6 +582,7 @@ function renderOutput() {
     resultCtx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
     resultMeta.textContent = "";
     copyButton.disabled = true;
+    copyCommandButton.disabled = true;
     downloadButton.disabled = true;
     return;
   }
@@ -553,7 +608,56 @@ function renderOutput() {
 
   resultMeta.textContent = `${output.width} x ${output.height}px`;
   copyButton.disabled = false;
+  copyCommandButton.disabled = false;
   downloadButton.disabled = false;
+}
+
+function buildBatchCommand() {
+  if (!state.crop) {
+    return "";
+  }
+
+  const crop = [
+    round(state.crop.x),
+    round(state.crop.y),
+    round(state.crop.width),
+    round(state.crop.height),
+  ].join(",");
+  const parts = ["npm", "run", "batch", "--", "--crop", crop];
+  const mode = currentResizeMode();
+
+  parts.push("--resize", mode);
+
+  if (mode === "width") {
+    const width = Math.max(1, Number(resizeFields.width.value || round(state.crop.width)));
+    parts.push("--width", String(round(width)));
+  } else if (mode === "height") {
+    const height = Math.max(1, Number(resizeFields.height.value || round(state.crop.height)));
+    parts.push("--height", String(round(height)));
+  } else if (mode === "percent") {
+    const percent = Math.max(1, Number(resizeFields.percent.value || 100));
+    parts.push("--percent", String(round(percent)));
+  }
+
+  parts.push("<画像ファイルまたはディレクトリ>");
+  return parts.join(" ");
+}
+
+async function copyTextToClipboard(text) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.append(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  textarea.remove();
 }
 
 async function copyResultImageToClipboard({ announce = true } = {}) {
@@ -598,16 +702,48 @@ async function loadFile(file) {
     return;
   }
 
+  const previousSettings = snapshotSettings();
   const image = await fileToImage(file);
   state.image = image;
   state.imageName = file.name || "image.png";
   imageMeta.textContent = `${image.width} x ${image.height}px / ${file.type || "image"}`;
-  resizeFields.width.value = image.width;
-  resizeFields.height.value = image.height;
-  resizeFields.percent.value = 100;
-  initializeCrop();
+  restoreSettings(previousSettings, image);
   refreshResizeSummary();
   renderOutput();
+}
+
+function readCropInputValues() {
+  const values = {
+    x: cropInputs.x.value.trim(),
+    y: cropInputs.y.value.trim(),
+    width: cropInputs.width.value.trim(),
+    height: cropInputs.height.value.trim(),
+  };
+
+  if (Object.values(values).some((value) => value === "")) {
+    return null;
+  }
+
+  const crop = {
+    x: Number(values.x),
+    y: Number(values.y),
+    width: Number(values.width),
+    height: Number(values.height),
+  };
+
+  if (Object.values(crop).some((value) => !Number.isFinite(value))) {
+    return null;
+  }
+
+  if (crop.x < 0 || crop.y < 0 || crop.width < 1 || crop.height < 1) {
+    return null;
+  }
+
+  if (crop.x + crop.width > state.image.width || crop.y + crop.height > state.image.height) {
+    return null;
+  }
+
+  return crop;
 }
 
 function handleCropInputChange() {
@@ -615,12 +751,10 @@ function handleCropInputChange() {
     return;
   }
 
-  let crop = {
-    x: Number(cropInputs.x.value || 0),
-    y: Number(cropInputs.y.value || 0),
-    width: Number(cropInputs.width.value || state.image.width),
-    height: Number(cropInputs.height.value || state.image.height),
-  };
+  let crop = readCropInputValues();
+  if (!crop) {
+    return;
+  }
 
   const ratio = aspectRatioFromMode();
   if (ratio) {
@@ -629,6 +763,80 @@ function handleCropInputChange() {
 
   setCrop(crop, true);
   refreshResizeSummary();
+  renderOutput();
+}
+
+function shouldIgnoreKeyboardShortcut() {
+  const activeElement = document.activeElement;
+  if (!activeElement) {
+    return false;
+  }
+
+  return !["BODY", "HTML"].includes(activeElement.tagName);
+}
+
+function resizeCropWithKeyboard(key) {
+  const delta = key === "ArrowLeft" || key === "ArrowUp" ? -1 : 1;
+  const ratio = aspectRatioFromMode();
+  const maxWidth = state.image.width - state.crop.x;
+  const maxHeight = state.image.height - state.crop.y;
+  let crop = { ...state.crop };
+
+  if (!ratio) {
+    if (key === "ArrowLeft" || key === "ArrowRight") {
+      crop.width = clamp(crop.width + delta, MIN_CROP_SIZE, maxWidth);
+    } else {
+      crop.height = clamp(crop.height + delta, MIN_CROP_SIZE, maxHeight);
+    }
+    return crop;
+  }
+
+  if (key === "ArrowLeft" || key === "ArrowRight") {
+    crop.width = clamp(crop.width + delta, MIN_CROP_SIZE, maxWidth);
+    crop.height = crop.width / ratio;
+    if (crop.height > maxHeight) {
+      crop.height = maxHeight;
+      crop.width = crop.height * ratio;
+    }
+  } else {
+    crop.height = clamp(crop.height + delta, MIN_CROP_SIZE, maxHeight);
+    crop.width = crop.height * ratio;
+    if (crop.width > maxWidth) {
+      crop.width = maxWidth;
+      crop.height = crop.width / ratio;
+    }
+  }
+
+  return adjustCropToAspect(crop, ratio);
+}
+
+function handleKeyboardShortcut(event) {
+  if (!state.image || !state.crop || shouldIgnoreKeyboardShortcut()) {
+    return;
+  }
+
+  if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) {
+    return;
+  }
+
+  event.preventDefault();
+
+  let crop;
+  if (event.shiftKey) {
+    crop = resizeCropWithKeyboard(event.key);
+  } else {
+    const dx = event.key === "ArrowLeft" ? -1 : event.key === "ArrowRight" ? 1 : 0;
+    const dy = event.key === "ArrowUp" ? -1 : event.key === "ArrowDown" ? 1 : 0;
+    crop = {
+      ...state.crop,
+      x: state.crop.x + dx,
+      y: state.crop.y + dy,
+    };
+  }
+
+  setCrop(crop);
+  refreshResizeSummary();
+  renderOutput();
 }
 
 fileButton.addEventListener("click", () => fileInput.click());
@@ -672,6 +880,8 @@ Object.values(cropInputs).forEach((input) => {
   input.addEventListener("input", handleCropInputChange);
 });
 
+window.addEventListener("keydown", handleKeyboardShortcut);
+
 resizeModeInputs.forEach((input) => {
   input.addEventListener("change", updateResizeVisibility);
 });
@@ -684,6 +894,21 @@ applyButton.addEventListener("click", renderOutput);
 
 copyButton.addEventListener("click", async () => {
   await copyResultImageToClipboard();
+});
+
+copyCommandButton.addEventListener("click", async () => {
+  const command = buildBatchCommand();
+  if (!command) {
+    resultMeta.textContent = "画像を読み込むと一括処理コマンドをコピーできます";
+    return;
+  }
+
+  try {
+    await copyTextToClipboard(command);
+    resultMeta.textContent = "一括処理コマンドをクリップボードにコピーしました";
+  } catch {
+    resultMeta.textContent = "一括処理コマンドのコピーに失敗しました";
+  }
 });
 
 transferButtons.forEach((button) => {
@@ -707,6 +932,10 @@ downloadButton.addEventListener("click", () => {
 editorCanvas.addEventListener("pointerdown", (event) => {
   if (!state.image || !state.crop) {
     return;
+  }
+
+  if (document.activeElement && document.activeElement !== document.body) {
+    document.activeElement.blur();
   }
 
   const dragMode = detectDragMode(event.clientX, event.clientY);

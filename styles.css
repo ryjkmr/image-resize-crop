@@ -203,6 +203,11 @@ button:disabled {
   border: 1px solid var(--line);
 }
 
+.result-stage {
+  border-radius: 0;
+  overflow: visible;
+}
+
 .canvas-stage {
   position: relative;
   aspect-ratio: 3 / 2;
